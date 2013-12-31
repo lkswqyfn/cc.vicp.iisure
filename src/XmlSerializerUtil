@@ -1,0 +1,72 @@
+package cc.vicp.iisure.phoneguard.utils;
+
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.util.List;
+
+import org.xmlpull.v1.XmlSerializer;
+
+import android.util.Xml;
+
+/**
+ * @author iisure The application can be a form bean object to serialize xml to
+ *         the output stream . abbreviated name of the bean object plus es will
+ *         be the beginning of the label xml
+ * 
+ */
+public class XmlSerializerUtil {
+	private XmlSerializer serializer;
+
+	/**
+	 * @param out
+	 * @throws Exception
+	 */
+	public XmlSerializerUtil(OutputStream out) throws Exception {
+		serializer = Xml.newSerializer();
+		serializer.setOutput(out, "utf-8");
+	}
+
+	/**
+	 * Accepts a list collection, which will be packaged into each object into
+	 * xml, will each bean to bean name as the start tag, bean object attributes
+	 * as its sub-tab, the property value as text content
+	 * @param beans
+	 * @throws Exception
+	 */
+	@SuppressWarnings("all")
+	public <T> void SerializedXml(List<T> beans) throws Exception {
+		T bean = beans.get(0);
+		List<Method> list = BeanUtils.getBeanUtils().parseGet(bean);
+		serializer.startDocument("utf-8", true);
+		String name = bean.getClass().getSimpleName();
+		serializer.startTag(null, name + "es");
+		for (int i = 0; i < beans.size(); i++) {
+			bean = beans.get(i);
+			serializer.startTag(null, name);
+			for (Method method : list) {
+				String mName = method.getName().substring("get".length());
+				serializer.startTag(null, firstWord2LC(mName));
+				Object invoke = method.invoke(bean, null);
+				serializer.text(invoke + "");
+				serializer.endTag(null, firstWord2LC(mName));
+			}
+			serializer.endTag(null, name);
+		}
+		serializer.endTag(null, name + "es");
+		serializer.endDocument();
+	}
+
+	/**
+	 * The first letters to lowercase
+	 * @param attributeName
+	 * @return  lowercaseString
+	 */
+	private String firstWord2LC(String attributeName) {
+		byte[] bs = attributeName.getBytes();
+		byte b = bs[0];
+		if (b >= 65 && b <= 90) {
+			bs[0] = (byte) (b + 32);
+		}
+		return new String(bs);
+	}
+}
