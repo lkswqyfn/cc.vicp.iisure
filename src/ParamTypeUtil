@@ -1,0 +1,34 @@
+package cc.vicp.iisure.phoneguard.utils;
+
+import android.text.TextUtils;
+
+/**
+ * @author iisure
+ * Conversion Type
+ *
+ */
+public class ParamTypeUtil {
+		public ParamTypeUtil() {
+		}
+		/**
+		 * @param clazz
+		 * @param param
+		 * @return
+		 */
+		public static Object getParam(Class<?> clazz,String param){
+			if(!TextUtils.isEmpty(param.trim())){
+					String name = clazz.getSimpleName();
+					if ("Integer".equals(name)){
+						return Integer.valueOf(param);
+					}else if ("String".equals(name)){
+						return param;
+					}else if ("Long".equals(name)){
+						return Long.valueOf(param);
+					}else if ("Boolean".equals(name)){
+						return Boolean.valueOf(param);
+					}
+			}
+			return  null;
+		}
+		
+}
