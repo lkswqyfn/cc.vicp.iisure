@@ -1,0 +1,137 @@
+package cc.vicp.iisure.phoneguard.utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import android.util.Xml;
+
+/**
+ * @author iisure The application will automatically parse xml file and object
+ *         inside the package to the JavaBean Note: Your JavaBean property name
+ *         must be consistent Xml tag name or attribute name within a consistent
+ *         label The application will match the tag name and attribute names,
+ *         and text or attribute value for the package to the JavaBean
+ *         properties being
+ * 
+ */
+public class XmlPullParseUtil {
+	private XmlPullParser parser;
+	private String lastEndTag = null;
+
+	/**
+	 * Constructor accepts an inputstream
+	 * 
+	 * @param in
+	 * @throws Exception
+	 */
+	public XmlPullParseUtil(InputStream in) throws Exception {
+		parser = Xml.newPullParser();
+		parser.setInput(in, "utf-8");
+	}
+
+	/**
+	 * 
+	 * Parse xml file to accept bean
+	 * 
+	 * @param bean
+	 *            bean property needs and xml tag names or attribute names the
+	 *            same, the first letter is not case sensitive
+	 * @return   List<bean>  Returns a collection of objects bean
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> List<T> parseXML(T bean) throws Exception {
+		List<Method> list = BeanUtils.getBeanUtils().parseSet(bean);
+		List<T> beanLS = new ArrayList<T>();
+		Class<? extends Object> clazz = bean.getClass();
+		T tBean = (T) clazz.newInstance();
+		for (int type = parser.getEventType(); type != XmlPullParser.END_DOCUMENT; type = parser.next()) {
+			if (type == XmlPullParser.START_TAG) {
+				if (lastEndTag != null && parser.getName().equalsIgnoreCase((lastEndTag))) {
+					beanLS.add(tBean);
+					tBean = (T) clazz.newInstance();
+				}
+				int count = parser.getAttributeCount();
+				insertAtt(list, tBean, count);
+				String TagName = parser.getName();
+				String tag = firstWordToUC(TagName);
+				insertText(list, tBean, tag);
+
+			}
+			if (type == XmlPullParser.END_TAG) {
+				lastEndTag = parser.getName();
+			}
+		}
+		beanLS.add(tBean);
+		return beanLS;
+	}
+
+	/**
+	 * Bean object to insert text tags
+	 * @param list    
+	 * @param tBean
+	 * @param TagName
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 * @throws XmlPullParserException
+	 * @throws IOException
+	 */
+	private <T> void insertText(List<Method> list, T tBean, String TagName) throws IllegalAccessException, InvocationTargetException, XmlPullParserException, IOException {
+		for (Method method : list) {
+			if (method.getName().contains(TagName)) {
+				Class<?> paramClazz = method.getParameterTypes()[0];
+				String Text = parser.nextText();
+				Object param = ParamTypeUtil.getParam(paramClazz, Text);
+				method.invoke(tBean, param);
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Insert the object to a bean property values
+	 * @param list
+	 * @param tBean
+	 * @param count
+	 * @throws IllegalAccessException
+	 * @throws InvocationTargetException
+	 */
+	private <T> void insertAtt(List<Method> list, T tBean, int count) throws IllegalAccessException, InvocationTargetException {
+		if (count > 0) {
+			for (int i = 0; i < count; i++) {
+				for (Method method : list) {
+					String attributeName = parser.getAttributeName(i);
+					String attname = firstWordToUC(attributeName);
+					if (method.getName().contains(attname)) {
+						Class<?> paramClazz = method.getParameterTypes()[0];
+						String attributeValue = parser.getAttributeValue(i);
+						Object param = ParamTypeUtil.getParam(paramClazz, attributeValue);
+						method.invoke(tBean, param);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Uppercase first letter
+	 * @param attributeName
+	 * @return
+	 */
+	private String firstWordToUC(String attributeName) {
+		byte[] bs = attributeName.getBytes();
+		byte b = bs[0];
+		if (b >= 97 && b <= 122) {
+			bs[0] = (byte) (b - 32);
+		}
+		return new String(bs);
+	}
+}
