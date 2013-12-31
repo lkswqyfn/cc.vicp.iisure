@@ -1,0 +1,62 @@
+package cc.vicp.iisure.phoneguard.utils;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author iisure
+ * Analytic bean object, reflecting its get or set method
+ *
+ */
+public class BeanUtils {
+	private BeanUtils() {
+	}
+	/**
+	 * @return  Examples
+	 */
+	public static BeanUtils getBeanUtils(){
+			return new BeanUtils();
+	}
+	/**
+	 * Analytical methods set out all the bean object
+	 * @param bean
+	 * @return  List<Method>
+	 * @throws Exception
+	 */
+	public <T> List<Method> parseSet(T bean) throws Exception{
+		Method[] methods = bean.getClass().getMethods();
+		List< Method> list = null;
+		if (methods != null && methods.length > 0){
+				list = new ArrayList<Method>();
+				for(Method method : methods){
+					String name = method.getName();
+					if (name.startsWith("set")){
+							list.add(method);
+					}
+				}
+		}
+		return list;
+	}
+	
+	/**
+	 * All get resolved bean object methods
+	 * @param bean
+	 * @return  List<Method>
+	 * @throws Exception
+	 */
+	public <T> List<Method> parseGet(T bean) throws Exception{
+		Method[] methods = bean.getClass().getMethods();
+		List< Method> list = null;
+		if (methods != null && methods.length > 0){
+			list = new ArrayList<Method>();
+			for(Method method : methods){
+				String name = method.getName();
+				if (name.startsWith("get") && !name.contains("Class")){
+					list.add(method);
+				}
+			}
+		}
+		return list;
+	}
+}
